@@ -1,1 +1,1097 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Listen" />
+  <title>Listen</title>
+  <style>
+    :root {
+      --bg: #F6F4F0;
+      --surface: #FFFFFF;
+      --surface-glass: rgba(246, 244, 240, 0.88);
+      --text-primary: #1A1917;
+      --text-secondary: #78756E;
+      --text-muted: #A8A49C;
+      --border: rgba(26, 25, 23, 0.08);
+      --highlight-bg: #EAE5DC;
+      --accent: #1A1917;
+      --accent-fg: #F6F4F0;
+      --danger: #B83A2D;
+      --safe-top: env(safe-area-inset-top, 20px);
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+      --font-serif: "Songti SC", "Noto Serif SC", "STSong", Georgia, serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif;
+    }
 
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121211;
+        --surface: #1C1C1A;
+        --surface-glass: rgba(18, 18, 17, 0.88);
+        --text-primary: #E8E6DF;
+        --text-secondary: #8E8B82;
+        --text-muted: #5A5852;
+        --border: rgba(232, 230, 223, 0.09);
+        --highlight-bg: #2A2925;
+        --accent: #E8E6DF;
+        --accent-fg: #121211;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      height: 100%;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* 视图切换架构 */
+    .view {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .view.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+    }
+
+    /* 顶部导航栏 */
+    .topbar {
+      padding-top: calc(var(--safe-top) + 12px);
+      padding-bottom: 14px;
+      padding-left: 24px;
+      padding-right: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 10;
+    }
+
+    .brand-title {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+
+    .btn-minimal {
+      background: var(--accent);
+      color: var(--accent-fg);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.15s;
+    }
+
+    .btn-minimal:active {
+      opacity: 0.7;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-primary);
+      border: none;
+      padding: 8px 0;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-ghost:active {
+      opacity: 0.6;
+    }
+
+    /* 首页：文章列表 */
+    .article-list-container {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px 24px calc(var(--safe-bottom) + 32px);
+    }
+
+    .empty-state {
+      margin-top: 28vh;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .empty-state p {
+      font-family: var(--font-serif);
+      font-size: 17px;
+      margin: 0 0 8px;
+      color: var(--text-primary);
+    }
+
+    .empty-state span {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .article-item {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      cursor: pointer;
+    }
+
+    .article-item:active .article-item-title {
+      opacity: 0.6;
+    }
+
+    .article-item-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .article-item-title {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.45;
+      margin: 0 0 6px;
+      color: var(--text-primary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .article-item-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .article-delete-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 6px 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .article-delete-btn:active {
+      color: var(--danger);
+    }
+
+    /* 播放页：阅读区域 */
+    .reader-scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 28px 24px 180px;
+    }
+
+    .reader-content-wrap {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .reader-title {
+      font-family: var(--font-serif);
+      font-size: 25px;
+      font-weight: 600;
+      line-height: 1.38;
+      margin: 0 0 28px;
+      letter-spacing: -0.01em;
+    }
+
+    .reader-p {
+      font-family: var(--font-serif);
+      font-size: 19px;
+      line-height: 1.85;
+      margin: 0 0 20px;
+      color: var(--text-primary);
+      text-align: justify;
+      word-break: break-word;
+    }
+
+    .sentence {
+      border-radius: 4px;
+      padding: 2px 0;
+      transition: background-color 0.18s ease, color 0.18s ease;
+      cursor: pointer;
+    }
+
+    .sentence.active {
+      background-color: var(--highlight-bg);
+      box-shadow: 0 0 0 3px var(--highlight-bg);
+    }
+
+    /* 播放页：底部极简控制栏 */
+    .player-dock {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--surface-glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      padding: 14px 24px calc(var(--safe-bottom) + 14px);
+      z-index: 20;
+    }
+
+    .player-dock-inner {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .progress-bar-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="range"].progress-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type="range"].progress-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-secondary);
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .speed-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      min-width: 68px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .speed-btn:active {
+      background: var(--highlight-bg);
+    }
+
+    .play-btn {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--accent-fg);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.12s ease;
+    }
+
+    .play-btn:active {
+      transform: scale(0.93);
+    }
+
+    .play-btn svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    .step-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .step-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 13px;
+      padding: 8px 6px;
+      cursor: pointer;
+    }
+
+    .step-btn:active {
+      color: var(--text-primary);
+    }
+
+    /* 导入弹窗（Bottom Sheet） */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 50;
+      display: flex;
+      align-items: flex-end;
+      opacity: 1;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-backdrop.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .modal-sheet {
+      width: 100%;
+      max-height: 88vh;
+      background: var(--surface);
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      padding: 20px 24px calc(var(--safe-bottom) + 20px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transform: translateY(0);
+      transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .modal-backdrop.hidden .modal-sheet {
+      transform: translateY(100%);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .txt-upload-box {
+      border: 1px dashed var(--text-muted);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: block;
+    }
+
+    .txt-upload-box input {
+      display: none;
+    }
+
+    .input-title {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text-primary);
+      font-size: 15px;
+      font-family: var(--font-sans);
+      outline: none;
+    }
+
+    .input-content {
+      width: 100%;
+      height: 200px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text-primary);
+      font-size: 15px;
+      line-height: 1.6;
+      font-family: var(--font-sans);
+      resize: none;
+      outline: none;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 视图 1：首页（仅显示文章列表与导入按钮） -->
+  <section id="view-home" class="view">
+    <header class="topbar">
+      <h1 class="brand-title">Listen</h1>
+      <button id="btn-open-import" class="btn-minimal">+ 导入</button>
+    </header>
+    <main id="article-list" class="article-list-container"></main>
+  </section>
+
+  <!-- 视图 2：播放页（仅显示标题、内容、播放按钮、进度和倍速） -->
+  <section id="view-player" class="view hidden">
+    <header class="topbar">
+      <button id="btn-back" class="btn-ghost">← 列表</button>
+      <span id="player-top-progress" style="font-size:12px;color:var(--text-secondary);font-variant-numeric:tabular-nums;">0%</span>
+    </header>
+
+    <main id="reader-scroll" class="reader-scroll">
+      <article class="reader-content-wrap">
+        <h1 id="reader-title" class="reader-title"></h1>
+        <div id="reader-body"></div>
+      </article>
+    </main>
+
+    <footer class="player-dock">
+      <div class="player-dock-inner">
+        <div class="progress-row">
+          <div class="progress-bar-wrap">
+            <input id="progress-slider" type="range" class="progress-slider" min="0" max="0" value="0" />
+          </div>
+          <span id="progress-text" class="progress-label">0 / 0</span>
+        </div>
+
+        <div class="controls-row">
+          <div class="step-group">
+            <button id="btn-prev" class="step-btn" title="上一句">上一句</button>
+            <button id="btn-next" class="step-btn" title="下一句">下一句</button>
+          </div>
+
+          <button id="btn-play" class="play-btn" aria-label="播放或暂停">
+            <svg id="icon-play" viewBox="0 0 24 24">
+              <path d="M8 5.14v14l11-7-11-7z"/>
+            </svg>
+            <svg id="icon-pause" viewBox="0 0 24 24" style="display:none;">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+          </button>
+
+          <button id="btn-speed" class="speed-btn">1×</button>
+        </div>
+      </div>
+    </footer>
+  </section>
+
+  <!-- 导入面板：支持粘贴与 TXT 文件导入 -->
+  <div id="modal-import" class="modal-backdrop hidden">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2 class="modal-title">导入文章</h2>
+        <button id="btn-close-import" class="btn-ghost" style="font-size:14px;color:var(--text-secondary);">取消</button>
+      </div>
+
+      <label class="txt-upload-box">
+        <input id="file-input" type="file" accept=".txt,text/plain" />
+        <span>点击选择本地 .TXT 文件（自动识别编码）</span>
+      </label>
+
+      <input id="input-title" type="text" class="input-title" placeholder="文章标题（留空则自动取首行）" />
+      <textarea id="input-content" class="input-content" placeholder="在此粘贴文章正文..."></textarea>
+
+      <div class="modal-actions">
+        <button id="btn-save-article" class="btn-minimal" style="width:100%;justify-content:center;padding:12px;">保存并开始收听</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**************************************************************
+     * 1. IndexedDB 本地存储引擎（存文章、当前句索引、倍速配置）
+     **************************************************************/
+    const DB_NAME = 'ListenAppDB';
+    const DB_VERSION = 1;
+    const STORE_ARTICLES = 'articles';
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_ARTICLES)) {
+            db.createObjectStore(STORE_ARTICLES, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbGetAllArticles() {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_ARTICLES, 'readonly');
+        const req = tx.objectStore(STORE_ARTICLES).getAll();
+        req.onsuccess = () => {
+          const list = req.result || [];
+          list.sort((a, b) => b.updatedAt - a.updatedAt);
+          resolve(list);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbSaveArticle(article) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_ARTICLES, 'readwrite');
+        tx.objectStore(STORE_ARTICLES).put(article);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function dbDeleteArticle(id) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_ARTICLES, 'readwrite');
+        tx.objectStore(STORE_ARTICLES).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    /**************************************************************
+     * 2. 文本自然段落与标点分句算法（防 iOS TTS 长句卡死）
+     **************************************************************/
+    function parseArticleText(rawText) {
+      const normalized = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const rawParagraphs = normalized.split(/\n+/);
+      const paragraphs = [];
+      const sentences = [];
+
+      for (const p of rawParagraphs) {
+        const trimmed = p.trim();
+        if (!trimmed) continue;
+
+        // 按句末标点切分，保留标点符号
+        const primaryChunks = trimmed.match(/[^。！？；.!?;]+[。！？；.!?;”"’']*/g) || [trimmed];
+        const pIndices = [];
+
+        for (const chunk of primaryChunks) {
+          const cleanChunk = chunk.trim();
+          if (!cleanChunk) continue;
+
+          // 如果单句超过 140 字仍无句号，按逗号二次切分防止 iOS 语音缓冲溢出
+          if (cleanChunk.length > 140) {
+            const subChunks = cleanChunk.match(/[^，,、]+[，,、]*/g) || [cleanChunk];
+            let buffer = '';
+            for (const sub of subChunks) {
+              if ((buffer + sub).length > 120 && buffer.length > 0) {
+                const idx = sentences.length;
+                sentences.push(buffer.trim());
+                pIndices.push(idx);
+                buffer = sub;
+              } else {
+                buffer += sub;
+              }
+            }
+            if (buffer.trim()) {
+              const idx = sentences.length;
+              sentences.push(buffer.trim());
+              pIndices.push(idx);
+            }
+          } else {
+            const idx = sentences.length;
+            sentences.push(cleanChunk);
+            pIndices.push(idx);
+          }
+        }
+
+        if (pIndices.length > 0) {
+          paragraphs.push(pIndices);
+        }
+      }
+
+      return { paragraphs, sentences };
+    }
+
+    /**************************************************************
+     * 3. 语音合成状态机与防休眠引擎
+     **************************************************************/
+    const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];
+    let currentSpeedIndex = 1; // 默认 1x
+    let currentArticle = null;
+    let parsedData = { paragraphs: [], sentences: [] };
+    let currentIndex = 0;
+    let isPlaying = false;
+    let sessionToken = 0; // 防止 cancel() 异步触发旧 onend 导致跳句
+    let wakeLock = null;
+
+    // 读取保存的倍速偏好
+    const savedRate = parseFloat(localStorage.getItem('listen_rate') || '1');
+    if (SPEEDS.includes(savedRate)) {
+      currentSpeedIndex = SPEEDS.indexOf(savedRate);
+    }
+
+    // 申请屏幕常亮锁（防止 iOS 息屏杀死 Web Speech）
+    async function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+        } catch (_) {}
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) {
+        wakeLock.release().catch(() => {});
+        wakeLock = null;
+      }
+    }
+
+    // 挑选最佳中文/系统发音人
+    function getBestVoice(text) {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return null;
+      const isChinese = /[\u4e00-\u9fa5]/.test(text);
+      if (isChinese) {
+        return (
+          voices.find(v => v.lang === 'zh-CN' && (v.name.includes('Ting') || v.name.includes('婷') || v.localService)) ||
+          voices.find(v => v.lang.startsWith('zh')) ||
+          null
+        );
+      }
+      return voices.find(v => v.default) || voices[0];
+    }
+
+    // 核心：朗读当前句并自动衔接下一句
+    function speakCurrentSentence() {
+      if (!currentArticle || parsedData.sentences.length === 0) return;
+
+      // 递增会话令牌，让之前未完成的异步回调全部失效
+      const myToken = ++sessionToken;
+      window.speechSynthesis.cancel();
+
+      if (currentIndex >= parsedData.sentences.length) {
+        currentIndex = 0;
+      }
+
+      const textToSpeak = parsedData.sentences[currentIndex];
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      // 挂载到全局，防止 iOS Safari 垃圾回收器在朗读中途回收对象导致断音
+      window.__activeUtterance = utterance;
+
+      const voice = getBestVoice(textToSpeak);
+      if (voice) utterance.voice = voice;
+      utterance.lang = /[\u4e00-\u9fa5]/.test(textToSpeak) ? 'zh-CN' : 'en-US';
+      utterance.rate = SPEEDS[currentSpeedIndex];
+
+      utterance.onend = () => {
+        if (myToken !== sessionToken || !isPlaying) return;
+        if (currentIndex + 1 < parsedData.sentences.length) {
+          currentIndex++;
+          saveProgressSilently();
+          updatePlayerUI(true);
+          speakCurrentSentence();
+        } else {
+          // 全文朗读完毕
+          isPlaying = false;
+          releaseWakeLock();
+          saveProgressSilently();
+          updatePlayButtonUI();
+        }
+      };
+
+      utterance.onerror = (e) => {
+        if (myToken !== sessionToken) return;
+        // iOS 中断或取消也会触发 error，仅在非预期错误时停播
+        if (e.error !== 'canceled' && e.error !== 'interrupted') {
+          isPlaying = false;
+          releaseWakeLock();
+          updatePlayButtonUI();
+        }
+      };
+
+      updatePlayerUI(true);
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function startPlayback() {
+      if (!currentArticle || parsedData.sentences.length === 0) return;
+      isPlaying = true;
+      updatePlayButtonUI();
+      requestWakeLock();
+      speakCurrentSentence();
+    }
+
+    function pausePlayback() {
+      sessionToken++;
+      isPlaying = false;
+      window.speechSynthesis.cancel();
+      releaseWakeLock();
+      saveProgressSilently();
+      updatePlayButtonUI();
+    }
+
+    function togglePlayback() {
+      if (isPlaying) {
+        pausePlayback();
+      } else {
+        startPlayback();
+      }
+    }
+
+    async function saveProgressSilently() {
+      if (!currentArticle) return;
+      currentArticle.currentIndex = currentIndex;
+      currentArticle.totalSentences = parsedData.sentences.length;
+      currentArticle.updatedAt = Date.now();
+      localStorage.setItem('listen_last_article_id', currentArticle.id);
+      await dbSaveArticle(currentArticle);
+    }
+
+    /**************************************************************
+     * 4. 界面渲染与交互绑定
+     **************************************************************/
+    const viewHome = document.getElementById('view-home');
+    const viewPlayer = document.getElementById('view-player');
+    const articleListEl = document.getElementById('article-list');
+    const readerScrollEl = document.getElementById('reader-scroll');
+    const readerTitleEl = document.getElementById('reader-title');
+    const readerBodyEl = document.getElementById('reader-body');
+    const progressSlider = document.getElementById('progress-slider');
+    const progressText = document.getElementById('progress-text');
+    const playerTopProgress = document.getElementById('player-top-progress');
+    const btnPlay = document.getElementById('btn-play');
+    const iconPlay = document.getElementById('icon-play');
+    const iconPause = document.getElementById('icon-pause');
+    const btnSpeed = document.getElementById('btn-speed');
+    const modalImport = document.getElementById('modal-import');
+    const inputTitle = document.getElementById('input-title');
+    const inputContent = document.getElementById('input-content');
+    const fileInput = document.getElementById('file-input');
+
+    btnSpeed.textContent = `${SPEEDS[currentSpeedIndex]}×`;
+
+    function updatePlayButtonUI() {
+      if (isPlaying) {
+        iconPlay.style.display = 'none';
+        iconPause.style.display = 'block';
+      } else {
+        iconPlay.style.display = 'block';
+        iconPause.style.display = 'none';
+      }
+    }
+
+    function updatePlayerUI(autoScroll = false) {
+      const total = parsedData.sentences.length;
+      if (total === 0) return;
+
+      progressSlider.max = total - 1;
+      progressSlider.value = currentIndex;
+      progressText.textContent = `${currentIndex + 1} / ${total}`;
+      const pct = Math.round(((currentIndex + 1) / total) * 100);
+      playerTopProgress.textContent = `${pct}%`;
+
+      // 更新句子高亮
+      const prevActive = readerBodyEl.querySelector('.sentence.active');
+      if (prevActive) prevActive.classList.remove('active');
+
+      const currentEl = readerBodyEl.querySelector(`.sentence[data-idx="${currentIndex}"]`);
+      if (currentEl) {
+        currentEl.classList.add('active');
+        if (autoScroll) {
+          const rect = currentEl.getBoundingClientRect();
+          const containerRect = readerScrollEl.getBoundingClientRect();
+          const offset = rect.top - containerRect.top;
+          if (offset < 80 || offset > containerRect.height - 220) {
+            currentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }
+    }
+
+    async function renderHomeList() {
+      const articles = await dbGetAllArticles();
+      if (articles.length === 0) {
+        articleListEl.innerHTML = `
+          <div class="empty-state">
+            <p>尚无文章</p>
+            <span>点击右上角「+ 导入」粘贴文章或导入 TXT</span>
+          </div>
+        `;
+        return;
+      }
+
+      articleListEl.innerHTML = '';
+      for (const item of articles) {
+        const total = item.totalSentences || 1;
+        const idx = item.currentIndex || 0;
+        const pct = idx === 0 ? '未开始' : (idx + 1 >= total ? '已听完' : `已听 ${Math.round(((idx + 1) / total) * 100)}%`);
+        const wordCount = (item.content || '').length;
+
+        const row = document.createElement('div');
+        row.className = 'article-item';
+        row.innerHTML = `
+          <div class="article-item-main">
+            <h3 class="article-item-title"></h3>
+            <div class="article-item-meta">
+              <span>${pct}</span>
+              <span>·</span>
+              <span>${wordCount} 字</span>
+            </div>
+          </div>
+          <button class="article-delete-btn" aria-label="删除">删除</button>
+        `;
+        row.querySelector('.article-item-title').textContent = item.title;
+
+        row.querySelector('.article-item-main').addEventListener('click', () => {
+          openArticleInPlayer(item);
+        });
+
+        row.querySelector('.article-delete-btn').addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await dbDeleteArticle(item.id);
+          if (localStorage.getItem('listen_last_article_id') === item.id) {
+            localStorage.removeItem('listen_last_article_id');
+          }
+          renderHomeList();
+        });
+
+        articleListEl.appendChild(row);
+      }
+    }
+
+    function openArticleInPlayer(article) {
+      pausePlayback();
+      currentArticle = article;
+      parsedData = parseArticleText(article.content);
+      currentIndex = Math.min(article.currentIndex || 0, Math.max(0, parsedData.sentences.length - 1));
+
+      readerTitleEl.textContent = article.title;
+      readerBodyEl.innerHTML = '';
+
+      parsedData.paragraphs.forEach(pIndices => {
+        const pEl = document.createElement('p');
+        pEl.className = 'reader-p';
+        pIndices.forEach(idx => {
+          const span = document.createElement('span');
+          span.className = 'sentence';
+          span.dataset.idx = idx;
+          span.textContent = parsedData.sentences[idx] + ' ';
+          span.addEventListener('click', () => {
+            currentIndex = idx;
+            saveProgressSilently();
+            if (isPlaying) {
+              speakCurrentSentence();
+            } else {
+              startPlayback();
+            }
+          });
+          pEl.appendChild(span);
+        });
+        readerBodyEl.appendChild(pEl);
+      });
+
+      viewHome.classList.add('hidden');
+      viewPlayer.classList.remove('hidden');
+      localStorage.setItem('listen_last_article_id', article.id);
+
+      setTimeout(() => {
+        updatePlayerUI(true);
+      }, 60);
+    }
+
+    // 播放页按钮事件
+    btnPlay.addEventListener('click', togglePlayback);
+
+    document.getElementById('btn-prev').addEventListener('click', () => {
+      if (!currentArticle || currentIndex <= 0) return;
+      currentIndex--;
+      saveProgressSilently();
+      if (isPlaying) speakCurrentSentence();
+      else updatePlayerUI(true);
+    });
+
+    document.getElementById('btn-next').addEventListener('click', () => {
+      if (!currentArticle || currentIndex + 1 >= parsedData.sentences.length) return;
+      currentIndex++;
+      saveProgressSilently();
+      if (isPlaying) speakCurrentSentence();
+      else updatePlayerUI(true);
+    });
+
+    btnSpeed.addEventListener('click', () => {
+      currentSpeedIndex = (currentSpeedIndex + 1) % SPEEDS.length;
+      const newRate = SPEEDS[currentSpeedIndex];
+      btnSpeed.textContent = `${newRate}×`;
+      localStorage.setItem('listen_rate', String(newRate));
+      // 如果正在朗读，立即以新倍速重读当前句
+      if (isPlaying) {
+        speakCurrentSentence();
+      }
+    });
+
+    progressSlider.addEventListener('input', (e) => {
+      currentIndex = parseInt(e.target.value, 10) || 0;
+      updatePlayerUI(true);
+    });
+
+    progressSlider.addEventListener('change', () => {
+      saveProgressSilently();
+      if (isPlaying) {
+        speakCurrentSentence();
+      }
+    });
+
+    document.getElementById('btn-back').addEventListener('click', () => {
+      pausePlayback();
+      viewPlayer.classList.add('hidden');
+      viewHome.classList.remove('hidden');
+      renderHomeList();
+    });
+
+    // 导入弹窗与 TXT 编码自适应解析
+    document.getElementById('btn-open-import').addEventListener('click', () => {
+      inputTitle.value = '';
+      inputContent.value = '';
+      fileInput.value = '';
+      modalImport.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-close-import').addEventListener('click', () => {
+      modalImport.classList.add('hidden');
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const buffer = await file.arrayBuffer();
+      let decodedText = '';
+      try {
+        // 严格模式校验 UTF-8，若遇到 GBK 字节会抛异常并自动切换 GB18030
+        const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+        decodedText = utf8Decoder.decode(buffer);
+      } catch (_) {
+        const gbkDecoder = new TextDecoder('gb18030');
+        decodedText = gbkDecoder.decode(buffer);
+      }
+
+      const cleanName = file.name.replace(/\.txt$/i, '').trim();
+      if (!inputTitle.value.trim()) {
+        inputTitle.value = cleanName;
+      }
+      inputContent.value = decodedText.trim();
+    });
+
+    document.getElementById('btn-save-article').addEventListener('click', async () => {
+      const rawContent = inputContent.value.trim();
+      if (!rawContent) return;
+
+      let title = inputTitle.value.trim();
+      if (!title) {
+        const firstLine = rawContent.split(/\n+/)[0].trim();
+        title = firstLine.slice(0, 36) || '未命名文章';
+      }
+
+      const parsed = parseArticleText(rawContent);
+      if (parsed.sentences.length === 0) return;
+
+      const newArticle = {
+        id: 'art_' + Date.now(),
+        title,
+        content: rawContent,
+        currentIndex: 0,
+        totalSentences: parsed.sentences.length,
+        updatedAt: Date.now()
+      };
+
+      await dbSaveArticle(newArticle);
+      modalImport.classList.add('hidden');
+      await renderHomeList();
+      openArticleInPlayer(newArticle);
+    });
+
+    // 页面退到后台或锁屏时自动保存进度
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && currentArticle) {
+        saveProgressSilently();
+      }
+    });
+
+    // 初始化启动：预热语音列表，恢复上次打开的文章
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.getVoices();
+    };
+
+    (async function initApp() {
+      const articles = await dbGetAllArticles();
+      await renderHomeList();
+      const lastId = localStorage.getItem('listen_last_article_id');
+      if (lastId) {
+        const found = articles.find(a => a.id === lastId);
+        if (found) {
+          openArticleInPlayer(found);
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
