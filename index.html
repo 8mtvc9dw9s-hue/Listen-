@@ -58,7 +58,6 @@
       user-select: none;
     }
 
-    /* 视图切换架构 */
     .view {
       position: absolute;
       inset: 0;
@@ -74,7 +73,6 @@
       transform: translateY(8px);
     }
 
-    /* 顶部导航栏 */
     .topbar {
       padding-top: calc(var(--safe-top) + 12px);
       padding-bottom: 14px;
@@ -110,7 +108,6 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: opacity 0.15s;
     }
 
     .btn-minimal:active {
@@ -134,7 +131,26 @@
       opacity: 0.6;
     }
 
-    /* 首页：文章列表 */
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .voice-trigger {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .voice-trigger:active {
+      background: var(--highlight-bg);
+    }
+
     .article-list-container {
       flex: 1;
       overflow-y: auto;
@@ -214,7 +230,6 @@
       color: var(--danger);
     }
 
-    /* 播放页：阅读区域 */
     .reader-scroll {
       flex: 1;
       overflow-y: auto;
@@ -249,7 +264,7 @@
     .sentence {
       border-radius: 4px;
       padding: 2px 0;
-      transition: background-color 0.18s ease, color 0.18s ease;
+      transition: background-color 0.18s ease;
       cursor: pointer;
     }
 
@@ -258,7 +273,6 @@
       box-shadow: 0 0 0 3px var(--highlight-bg);
     }
 
-    /* 播放页：底部极简控制栏 */
     .player-dock {
       position: absolute;
       left: 0;
@@ -314,7 +328,7 @@
       font-size: 12px;
       font-variant-numeric: tabular-nums;
       color: var(--text-secondary);
-      min-width: 40px;
+      min-width: 48px;
       text-align: right;
     }
 
@@ -336,10 +350,6 @@
       min-width: 68px;
       text-align: center;
       cursor: pointer;
-    }
-
-    .speed-btn:active {
-      background: var(--highlight-bg);
     }
 
     .play-btn {
@@ -381,11 +391,6 @@
       cursor: pointer;
     }
 
-    .step-btn:active {
-      color: var(--text-primary);
-    }
-
-    /* 导入弹窗（Bottom Sheet） */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -404,7 +409,7 @@
 
     .modal-sheet {
       width: 100%;
-      max-height: 88vh;
+      max-height: 85vh;
       background: var(--surface);
       border-top-left-radius: 20px;
       border-top-right-radius: 20px;
@@ -412,6 +417,7 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
+      overflow-y: auto;
       transform: translateY(0);
       transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
@@ -474,17 +480,77 @@
       outline: none;
     }
 
-    .modal-actions {
+    /* 音色选择器样式 */
+    .section-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin: 4px 0 6px;
+      font-weight: 500;
+    }
+
+    .tone-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .tone-option {
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text-primary);
+      font-size: 13px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .tone-option.selected {
+      background: var(--accent);
+      color: var(--accent-fg);
+      border-color: var(--accent);
+      font-weight: 500;
+    }
+
+    .voice-list {
       display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 4px;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .voice-item {
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .voice-item.selected {
+      border-color: var(--accent);
+      background: var(--highlight-bg);
+      font-weight: 600;
+    }
+
+    .voice-tip {
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-secondary);
+      background: var(--bg);
+      padding: 10px 12px;
+      border-radius: 10px;
     }
   </style>
 </head>
 <body>
 
-  <!-- 视图 1：首页（仅显示文章列表与导入按钮） -->
+  <!-- 视图 1：首页 -->
   <section id="view-home" class="view">
     <header class="topbar">
       <h1 class="brand-title">Listen</h1>
@@ -493,11 +559,14 @@
     <main id="article-list" class="article-list-container"></main>
   </section>
 
-  <!-- 视图 2：播放页（仅显示标题、内容、播放按钮、进度和倍速） -->
+  <!-- 视图 2：播放页 -->
   <section id="view-player" class="view hidden">
     <header class="topbar">
       <button id="btn-back" class="btn-ghost">← 列表</button>
-      <span id="player-top-progress" style="font-size:12px;color:var(--text-secondary);font-variant-numeric:tabular-nums;">0%</span>
+      <div class="topbar-right">
+        <button id="btn-open-voice" class="voice-trigger">温润女声 ▾</button>
+        <span id="player-top-progress" style="font-size:12px;color:var(--text-secondary);font-variant-numeric:tabular-nums;">0%</span>
+      </div>
     </header>
 
     <main id="reader-scroll" class="reader-scroll">
@@ -518,8 +587,8 @@
 
         <div class="controls-row">
           <div class="step-group">
-            <button id="btn-prev" class="step-btn" title="上一句">上一句</button>
-            <button id="btn-next" class="step-btn" title="下一句">下一句</button>
+            <button id="btn-prev" class="step-btn">上一句</button>
+            <button id="btn-next" class="step-btn">下一句</button>
           </div>
 
           <button id="btn-play" class="play-btn" aria-label="播放或暂停">
@@ -537,7 +606,7 @@
     </footer>
   </section>
 
-  <!-- 导入面板：支持粘贴与 TXT 文件导入 -->
+  <!-- 导入文章面板 -->
   <div id="modal-import" class="modal-backdrop hidden">
     <div class="modal-sheet">
       <div class="modal-header">
@@ -553,15 +622,41 @@
       <input id="input-title" type="text" class="input-title" placeholder="文章标题（留空则自动取首行）" />
       <textarea id="input-content" class="input-content" placeholder="在此粘贴文章正文..."></textarea>
 
-      <div class="modal-actions">
-        <button id="btn-save-article" class="btn-minimal" style="width:100%;justify-content:center;padding:12px;">保存并开始收听</button>
+      <button id="btn-save-article" class="btn-minimal" style="width:100%;justify-content:center;padding:12px;">保存并开始收听</button>
+    </div>
+  </div>
+
+  <!-- 音色与声学质感调节面板 -->
+  <div id="modal-voice" class="modal-backdrop hidden">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2 class="modal-title">女声音色与质感</h2>
+        <button id="btn-close-voice" class="btn-ghost" style="font-size:14px;color:var(--text-secondary);">完成</button>
+      </div>
+
+      <div>
+        <div class="section-label">声线质感（柔化高频机械感）</div>
+        <div id="tone-grid" class="tone-grid">
+          <div class="tone-option" data-tone="warm">温润柔和</div>
+          <div class="tone-option" data-tone="calm">低沉知性</div>
+          <div class="tone-option" data-tone="clear">清亮原声</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">本机可用女声（优先推荐：语舒 / 莉莉 / 美佳）</div>
+        <div id="voice-list" class="voice-list"></div>
+      </div>
+
+      <div class="voice-tip">
+        提示：若列表里只有默认语音，请去 iPhone「设置 - 辅助功能 - 朗读内容 - 声音 - 中文」，下载<strong>台湾「语舒」</strong>或<strong>大陆「莉莉」</strong>的高音质包，重启本页面即可切换。
       </div>
     </div>
   </div>
 
   <script>
     /**************************************************************
-     * 1. IndexedDB 本地存储引擎（存文章、当前句索引、倍速配置）
+     * 1. IndexedDB 本地存储引擎
      **************************************************************/
     const DB_NAME = 'ListenAppDB';
     const DB_VERSION = 1;
@@ -616,19 +711,19 @@
     }
 
     /**************************************************************
-     * 2. 文本自然段落与标点分句算法（防 iOS TTS 长句卡死）
+     * 2. 段落与标点分句算法（记录段尾位置以实现段落呼吸留白）
      **************************************************************/
     function parseArticleText(rawText) {
       const normalized = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       const rawParagraphs = normalized.split(/\n+/);
       const paragraphs = [];
       const sentences = [];
+      const paragraphEndSet = new Set();
 
       for (const p of rawParagraphs) {
         const trimmed = p.trim();
         if (!trimmed) continue;
 
-        // 按句末标点切分，保留标点符号
         const primaryChunks = trimmed.match(/[^。！？；.!?;]+[。！？；.!?;”"’']*/g) || [trimmed];
         const pIndices = [];
 
@@ -636,7 +731,6 @@
           const cleanChunk = chunk.trim();
           if (!cleanChunk) continue;
 
-          // 如果单句超过 140 字仍无句号，按逗号二次切分防止 iOS 语音缓冲溢出
           if (cleanChunk.length > 140) {
             const subChunks = cleanChunk.match(/[^，,、]+[，,、]*/g) || [cleanChunk];
             let buffer = '';
@@ -664,31 +758,123 @@
 
         if (pIndices.length > 0) {
           paragraphs.push(pIndices);
+          paragraphEndSet.add(pIndices[pIndices.length - 1]);
         }
       }
 
-      return { paragraphs, sentences };
+      return { paragraphs, sentences, paragraphEndSet };
     }
 
     /**************************************************************
-     * 3. 语音合成状态机与防休眠引擎
+     * 3. 柔和女声优选器与声学参数引擎
      **************************************************************/
     const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];
-    let currentSpeedIndex = 1; // 默认 1x
+    const TONE_PRESETS = {
+      warm:  { label: '温润', pitch: 0.93, rateFactor: 0.96 },
+      calm:  { label: '知性', pitch: 0.87, rateFactor: 0.94 },
+      clear: { label: '清亮', pitch: 1.00, rateFactor: 1.00 }
+    };
+
+    // 柔和女声优先级权重表（排除明显男声或搞怪音色）
+    const FEMALE_PRIORITY = [
+      { keys: ['语舒', '語舒', 'yu-shu', 'yushu'], score: 100, tag: '极柔和·台湾女声' },
+      { keys: ['莉莉', 'lili'], score: 95, tag: '自然温婉·大陆女声' },
+      { keys: ['美佳', 'meijia'], score: 90, tag: '轻柔亲切·台湾女声' },
+      { keys: ['姗姗', '姍姍', 'shanshan'], score: 85, tag: '清脆自然·大陆女声' },
+      { keys: ['婷婷', 'tingting', 'ting-ting'], score: 75, tag: '系统标准·大陆女声' },
+      { keys: ['sin-ji', 'sinji', '善怡'], score: 60, tag: '粤语女声' }
+    ];
+
+    const EXCLUDE_KEYS = ['eddy', 'reed', 'rocko', 'grandpa', 'albert', 'fred', 'ralph', 'bahh', 'boing', 'bubbles', 'cellos', 'zarvox', '彬彬', 'binbin', '力力'];
+
+    let currentSpeedIndex = 1;
+    let currentToneKey = localStorage.getItem('listen_tone') || 'warm';
+    if (!TONE_PRESETS[currentToneKey]) currentToneKey = 'warm';
+
+    let selectedVoiceURI = localStorage.getItem('listen_voice_uri') || '';
+    let availableChineseVoices = [];
+
     let currentArticle = null;
-    let parsedData = { paragraphs: [], sentences: [] };
+    let parsedData = { paragraphs: [], sentences: [], paragraphEndSet: new Set() };
     let currentIndex = 0;
     let isPlaying = false;
-    let sessionToken = 0; // 防止 cancel() 异步触发旧 onend 导致跳句
+    let sessionToken = 0;
+    let interruptTimer = null;
+    let breathTimer = null;
     let wakeLock = null;
 
-    // 读取保存的倍速偏好
     const savedRate = parseFloat(localStorage.getItem('listen_rate') || '1');
     if (SPEEDS.includes(savedRate)) {
       currentSpeedIndex = SPEEDS.indexOf(savedRate);
     }
 
-    // 申请屏幕常亮锁（防止 iOS 息屏杀死 Web Speech）
+    function scoreVoice(voice) {
+      const nameLower = (voice.name || '').toLowerCase();
+      for (const bad of EXCLUDE_KEYS) {
+        if (nameLower.includes(bad)) return -1;
+      }
+      for (const item of FEMALE_PRIORITY) {
+        if (item.keys.some(k => nameLower.includes(k))) {
+          return item.score;
+        }
+      }
+      return 40;
+    }
+
+    function getVoiceTag(voice) {
+      const nameLower = (voice.name || '').toLowerCase();
+      for (const item of FEMALE_PRIORITY) {
+        if (item.keys.some(k => nameLower.includes(k))) {
+          return item.tag;
+        }
+      }
+      return voice.lang === 'zh-TW' ? '台湾音色' : '系统中文音色';
+    }
+
+    function refreshChineseVoices() {
+      const all = window.speechSynthesis.getVoices() || [];
+      const zhList = all
+        .filter(v => v.lang && v.lang.toLowerCase().startsWith('zh'))
+        .map(v => ({ voice: v, score: scoreVoice(v), tag: getVoiceTag(v) }))
+        .filter(item => item.score > 0);
+
+      zhList.sort((a, b) => b.score - a.score);
+      availableChineseVoices = zhList;
+
+      // 如果用户还没手动选过，自动锁定得分最高的柔和女声
+      if (!selectedVoiceURI && zhList.length > 0) {
+        selectedVoiceURI = zhList[0].voice.voiceURI;
+      } else if (selectedVoiceURI && zhList.length > 0) {
+        const exists = zhList.some(item => item.voice.voiceURI === selectedVoiceURI);
+        if (!exists) selectedVoiceURI = zhList[0].voice.voiceURI;
+      }
+
+      updateVoiceHeaderBadge();
+    }
+
+    function getSelectedVoiceObject() {
+      if (availableChineseVoices.length === 0) {
+        refreshChineseVoices();
+      }
+      const found = availableChineseVoices.find(item => item.voice.voiceURI === selectedVoiceURI);
+      if (found) return found.voice;
+      if (availableChineseVoices.length > 0) return availableChineseVoices[0].voice;
+      return null;
+    }
+
+    function updateVoiceHeaderBadge() {
+      const btn = document.getElementById('btn-open-voice');
+      if (!btn) return;
+      const toneLabel = TONE_PRESETS[currentToneKey].label;
+      const vObj = getSelectedVoiceObject();
+      if (vObj) {
+        const shortName = vObj.name.replace(/\s*\(.*?\)\s*/g, '').slice(0, 6);
+        btn.textContent = `${toneLabel} · ${shortName} ▾`;
+      } else {
+        btn.textContent = `${toneLabel}女声 ▾`;
+      }
+    }
+
     async function requestWakeLock() {
       if ('wakeLock' in navigator) {
         try {
@@ -704,28 +890,21 @@
       }
     }
 
-    // 挑选最佳中文/系统发音人
-    function getBestVoice(text) {
-      const voices = window.speechSynthesis.getVoices();
-      if (!voices || voices.length === 0) return null;
-      const isChinese = /[\u4e00-\u9fa5]/.test(text);
-      if (isChinese) {
-        return (
-          voices.find(v => v.lang === 'zh-CN' && (v.name.includes('Ting') || v.name.includes('婷') || v.localService)) ||
-          voices.find(v => v.lang.startsWith('zh')) ||
-          null
-        );
+    function clearTimers() {
+      if (interruptTimer) {
+        clearTimeout(interruptTimer);
+        interruptTimer = null;
       }
-      return voices.find(v => v.default) || voices[0];
+      if (breathTimer) {
+        clearTimeout(breathTimer);
+        breathTimer = null;
+      }
     }
 
-    // 核心：朗读当前句并自动衔接下一句
-    function speakCurrentSentence() {
-      if (!currentArticle || parsedData.sentences.length === 0) return;
-
-      // 递增会话令牌，让之前未完成的异步回调全部失效
-      const myToken = ++sessionToken;
-      window.speechSynthesis.cancel();
+    // 核心发声函数：严格同步 voice 与 lang，避免 iOS WebKit 语言冲突静默
+    function speakSentenceDirect(myToken, useFallbackWithoutVoice = false) {
+      if (!currentArticle || parsedData.sentences.length === 0 || !isPlaying) return;
+      if (myToken !== sessionToken) return;
 
       if (currentIndex >= parsedData.sentences.length) {
         currentIndex = 0;
@@ -733,23 +912,43 @@
 
       const textToSpeak = parsedData.sentences[currentIndex];
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      // 挂载到全局，防止 iOS Safari 垃圾回收器在朗读中途回收对象导致断音
       window.__activeUtterance = utterance;
 
-      const voice = getBestVoice(textToSpeak);
-      if (voice) utterance.voice = voice;
-      utterance.lang = /[\u4e00-\u9fa5]/.test(textToSpeak) ? 'zh-CN' : 'en-US';
-      utterance.rate = SPEEDS[currentSpeedIndex];
+      const isChinese = /[\u4e00-\u9fa5]/.test(textToSpeak);
+      const tone = TONE_PRESETS[currentToneKey] || TONE_PRESETS.warm;
+
+      if (isChinese && !useFallbackWithoutVoice) {
+        const chosenVoice = getSelectedVoiceObject();
+        if (chosenVoice) {
+          utterance.voice = chosenVoice;
+          // 关键：iOS 下指定 voice 对象时，lang 必须与该 voice 的语言完全一致
+          utterance.lang = chosenVoice.lang || 'zh-CN';
+        } else {
+          utterance.lang = 'zh-CN';
+        }
+      } else {
+        utterance.lang = isChinese ? 'zh-CN' : 'en-US';
+      }
+
+      // 声学柔化：微降高频共振峰 + 平滑倍速
+      utterance.pitch = tone.pitch;
+      utterance.rate = Number((SPEEDS[currentSpeedIndex] * tone.rateFactor).toFixed(2));
+      utterance.volume = 1.0;
 
       utterance.onend = () => {
         if (myToken !== sessionToken || !isPlaying) return;
         if (currentIndex + 1 < parsedData.sentences.length) {
+          const isParagraphEnd = parsedData.paragraphEndSet.has(currentIndex);
           currentIndex++;
           saveProgressSilently();
           updatePlayerUI(true);
-          speakCurrentSentence();
+
+          // 自然呼吸留白：段尾停顿 320ms，句间停顿 140ms
+          const pauseMs = isParagraphEnd ? 320 : 140;
+          breathTimer = setTimeout(() => {
+            speakSentenceDirect(myToken, false);
+          }, pauseMs);
         } else {
-          // 全文朗读完毕
           isPlaying = false;
           releaseWakeLock();
           saveProgressSilently();
@@ -759,8 +958,12 @@
 
       utterance.onerror = (e) => {
         if (myToken !== sessionToken) return;
-        // iOS 中断或取消也会触发 error，仅在非预期错误时停播
         if (e.error !== 'canceled' && e.error !== 'interrupted') {
+          // 如果因为某个未下载完整的语音包报错，自动回退系统默认语音重试一次
+          if (!useFallbackWithoutVoice) {
+            speakSentenceDirect(myToken, true);
+            return;
+          }
           isPlaying = false;
           releaseWakeLock();
           updatePlayButtonUI();
@@ -773,13 +976,39 @@
 
     function startPlayback() {
       if (!currentArticle || parsedData.sentences.length === 0) return;
+      clearTimers();
+
+      const myToken = ++sessionToken;
       isPlaying = true;
       updatePlayButtonUI();
       requestWakeLock();
-      speakCurrentSentence();
+
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
+        interruptTimer = setTimeout(() => {
+          speakSentenceDirect(myToken, false);
+        }, 65);
+      } else {
+        speakSentenceDirect(myToken, false);
+      }
+    }
+
+    function restartCurrentSentenceIfPlaying() {
+      if (!isPlaying) {
+        updatePlayerUI(true);
+        return;
+      }
+      clearTimers();
+      const myToken = ++sessionToken;
+      window.speechSynthesis.cancel();
+      updatePlayerUI(true);
+      interruptTimer = setTimeout(() => {
+        speakSentenceDirect(myToken, false);
+      }, 65);
     }
 
     function pausePlayback() {
+      clearTimers();
       sessionToken++;
       isPlaying = false;
       window.speechSynthesis.cancel();
@@ -822,6 +1051,7 @@
     const iconPause = document.getElementById('icon-pause');
     const btnSpeed = document.getElementById('btn-speed');
     const modalImport = document.getElementById('modal-import');
+    const modalVoice = document.getElementById('modal-voice');
     const inputTitle = document.getElementById('input-title');
     const inputContent = document.getElementById('input-content');
     const fileInput = document.getElementById('file-input');
@@ -848,7 +1078,6 @@
       const pct = Math.round(((currentIndex + 1) / total) * 100);
       playerTopProgress.textContent = `${pct}%`;
 
-      // 更新句子高亮
       const prevActive = readerBodyEl.querySelector('.sentence.active');
       if (prevActive) prevActive.classList.remove('active');
 
@@ -865,6 +1094,66 @@
         }
       }
     }
+
+    function renderVoiceModal() {
+      refreshChineseVoices();
+
+      // 渲染 3 档声线质感
+      document.querySelectorAll('#tone-grid .tone-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.tone === currentToneKey);
+      });
+
+      // 渲染手机本地识别到的中文女声列表
+      const listEl = document.getElementById('voice-list');
+      listEl.innerHTML = '';
+
+      if (availableChineseVoices.length === 0) {
+        listEl.innerHTML = `<div class="voice-tip">正在读取 iOS 语音库，请先点击播放任意一句话以激活列表。</div>`;
+        return;
+      }
+
+      const activeVoice = getSelectedVoiceObject();
+      availableChineseVoices.forEach(({ voice, tag }) => {
+        const item = document.createElement('div');
+        const isSel = activeVoice && activeVoice.voiceURI === voice.voiceURI;
+        item.className = 'voice-item' + (isSel ? ' selected' : '');
+        item.innerHTML = `
+          <span>${voice.name}</span>
+          <span style="font-size:12px;color:var(--text-secondary);">${tag}</span>
+        `;
+        item.addEventListener('click', () => {
+          selectedVoiceURI = voice.voiceURI;
+          localStorage.setItem('listen_voice_uri', selectedVoiceURI);
+          updateVoiceHeaderBadge();
+          renderVoiceModal();
+          if (isPlaying) {
+            restartCurrentSentenceIfPlaying();
+          }
+        });
+        listEl.appendChild(item);
+      });
+    }
+
+    document.querySelectorAll('#tone-grid .tone-option').forEach(el => {
+      el.addEventListener('click', () => {
+        currentToneKey = el.dataset.tone;
+        localStorage.setItem('listen_tone', currentToneKey);
+        updateVoiceHeaderBadge();
+        renderVoiceModal();
+        if (isPlaying) {
+          restartCurrentSentenceIfPlaying();
+        }
+      });
+    });
+
+    document.getElementById('btn-open-voice').addEventListener('click', () => {
+      renderVoiceModal();
+      modalVoice.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-close-voice').addEventListener('click', () => {
+      modalVoice.classList.add('hidden');
+    });
 
     async function renderHomeList() {
       const articles = await dbGetAllArticles();
@@ -918,7 +1207,9 @@
     }
 
     function openArticleInPlayer(article) {
-      pausePlayback();
+      if (isPlaying) {
+        pausePlayback();
+      }
       currentArticle = article;
       parsedData = parseArticleText(article.content);
       currentIndex = Math.min(article.currentIndex || 0, Math.max(0, parsedData.sentences.length - 1));
@@ -938,7 +1229,7 @@
             currentIndex = idx;
             saveProgressSilently();
             if (isPlaying) {
-              speakCurrentSentence();
+              restartCurrentSentenceIfPlaying();
             } else {
               startPlayback();
             }
@@ -951,29 +1242,27 @@
       viewHome.classList.add('hidden');
       viewPlayer.classList.remove('hidden');
       localStorage.setItem('listen_last_article_id', article.id);
+      updateVoiceHeaderBadge();
 
       setTimeout(() => {
         updatePlayerUI(true);
       }, 60);
     }
 
-    // 播放页按钮事件
     btnPlay.addEventListener('click', togglePlayback);
 
     document.getElementById('btn-prev').addEventListener('click', () => {
       if (!currentArticle || currentIndex <= 0) return;
       currentIndex--;
       saveProgressSilently();
-      if (isPlaying) speakCurrentSentence();
-      else updatePlayerUI(true);
+      restartCurrentSentenceIfPlaying();
     });
 
     document.getElementById('btn-next').addEventListener('click', () => {
       if (!currentArticle || currentIndex + 1 >= parsedData.sentences.length) return;
       currentIndex++;
       saveProgressSilently();
-      if (isPlaying) speakCurrentSentence();
-      else updatePlayerUI(true);
+      restartCurrentSentenceIfPlaying();
     });
 
     btnSpeed.addEventListener('click', () => {
@@ -981,9 +1270,8 @@
       const newRate = SPEEDS[currentSpeedIndex];
       btnSpeed.textContent = `${newRate}×`;
       localStorage.setItem('listen_rate', String(newRate));
-      // 如果正在朗读，立即以新倍速重读当前句
       if (isPlaying) {
-        speakCurrentSentence();
+        restartCurrentSentenceIfPlaying();
       }
     });
 
@@ -995,7 +1283,7 @@
     progressSlider.addEventListener('change', () => {
       saveProgressSilently();
       if (isPlaying) {
-        speakCurrentSentence();
+        restartCurrentSentenceIfPlaying();
       }
     });
 
@@ -1006,7 +1294,6 @@
       renderHomeList();
     });
 
-    // 导入弹窗与 TXT 编码自适应解析
     document.getElementById('btn-open-import').addEventListener('click', () => {
       inputTitle.value = '';
       inputContent.value = '';
@@ -1025,7 +1312,6 @@
       const buffer = await file.arrayBuffer();
       let decodedText = '';
       try {
-        // 严格模式校验 UTF-8，若遇到 GBK 字节会抛异常并自动切换 GB18030
         const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
         decodedText = utf8Decoder.decode(buffer);
       } catch (_) {
@@ -1068,20 +1354,18 @@
       openArticleInPlayer(newArticle);
     });
 
-    // 页面退到后台或锁屏时自动保存进度
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden' && currentArticle) {
         saveProgressSilently();
       }
     });
 
-    // 初始化启动：预热语音列表，恢复上次打开的文章
-    window.speechSynthesis.getVoices();
     window.speechSynthesis.onvoiceschanged = () => {
-      window.speechSynthesis.getVoices();
+      refreshChineseVoices();
     };
 
     (async function initApp() {
+      refreshChineseVoices();
       const articles = await dbGetAllArticles();
       await renderHomeList();
       const lastId = localStorage.getItem('listen_last_article_id');
